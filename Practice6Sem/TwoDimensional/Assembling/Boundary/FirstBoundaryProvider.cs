@@ -8,10 +8,12 @@ namespace Practice6Sem.TwoDimensional.Assembling.Boundary;
 public class FirstBoundaryProvider
 {
     private readonly Grid<Node2D> _grid;
+    private readonly Func<Node2D, Complex> _u;
 
-    public FirstBoundaryProvider(Grid<Node2D> grid)
+    public FirstBoundaryProvider(Grid<Node2D> grid, Func<Node2D, Complex> u)
     {
         _grid = grid;
+        _u = u;
     }
 
     public List<FirstCondition> GetConditions(List<int> elementsIndexes, List<Bound> bounds)
@@ -24,8 +26,8 @@ public class FirstBoundaryProvider
 
             foreach (var t in indexes)
             {
-                conditions.Add(new FirstCondition(t * 2, 0d));
-                conditions.Add(new FirstCondition(t * 2 + 1, 0d));
+                conditions.Add(new FirstCondition(t * 2, _u(_grid.Nodes[t]).Real));
+                conditions.Add(new FirstCondition(t * 2 + 1, _u(_grid.Nodes[t]).Imaginary));
             }
         }
 
@@ -34,12 +36,8 @@ public class FirstBoundaryProvider
 
     public List<FirstCondition> GetConditions(int elementsByLength, int elementsByHeight)
     {
-        var elementsIndexes = new List<int>(elementsByLength + elementsByHeight * 2 +
-                                            (elementsByLength * elementsByHeight -
-                                             elementsByLength * (elementsByHeight - 1)));
-        var bounds = new List<Bound>(elementsByLength + elementsByHeight * 2 +
-                                     (elementsByLength * elementsByHeight
-                                      - elementsByLength * (elementsByHeight - 1)));
+        var elementsIndexes = new List<int>(2 * (elementsByLength + elementsByHeight));
+        var bounds = new List<Bound>(2 * (elementsByLength + elementsByHeight));
 
         for (var i = 0; i < elementsByLength; i++)
         {

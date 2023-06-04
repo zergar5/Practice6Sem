@@ -72,7 +72,8 @@ public class LocalAssembler : ILocalAssembler
         {
             for (var j = 0; j <= i; j++)
             {
-                _stiffnessMatrix[i, j] = _doubleIntegralCalculator.Calculate
+                _stiffnessMatrix[i, j] = 
+                _doubleIntegralCalculator.Calculate
                 (
                     rInterval,
                     zInterval,
@@ -80,12 +81,11 @@ public class LocalAssembler : ILocalAssembler
                     {
                         var node = new Node2D(r, z);
                         return
-                            (_derivativeCalculator.Calculate(localBasisFunctions[i], node, 'r') +
-                             localBasisFunctions[i].Calculate(node) / r) *
-                            (_derivativeCalculator.Calculate(localBasisFunctions[j], node, 'r') +
-                             localBasisFunctions[j].Calculate(node) / r) +
-                            _derivativeCalculator.Calculate(localBasisFunctions[i], node, 'z') *
-                            _derivativeCalculator.Calculate(localBasisFunctions[j], node, 'z');
+                            (_derivativeCalculator.Calculate(localBasisFunctions[i], node, 'r') *
+                             _derivativeCalculator.Calculate(localBasisFunctions[j], node, 'r') +
+                             _derivativeCalculator.Calculate(localBasisFunctions[i], node, 'z') *
+                             _derivativeCalculator.Calculate(localBasisFunctions[j], node, 'z')) * r + 
+                            localBasisFunctions[i].Calculate(node) * localBasisFunctions[j].Calculate(node) / r;
                     }
                 );
 
@@ -138,9 +138,10 @@ public class LocalAssembler : ILocalAssembler
         {
             for (var j = 0; j < element.NodesIndexes.Length; j++)
             {
+                var massValue = _omega * material.Sigma * mass[i, j];
                 _matrix[i * 2, j * 2] = stiffness[i, j];
-                _matrix[i * 2, j * 2 + 1] = -_omega * material.Sigma * mass[i, j];
-                _matrix[i * 2 + 1, j * 2] = -_matrix[i * 2, j * 2 + 1];
+                _matrix[i * 2, j * 2 + 1] = -massValue;
+                _matrix[i * 2 + 1, j * 2] = massValue;
                 _matrix[i * 2 + 1, j * 2 + 1] = stiffness[i, j];
             }
         }

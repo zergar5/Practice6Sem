@@ -21,16 +21,16 @@ Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 var gridBuilder2D = new GridBuilder2D();
 var grid = gridBuilder2D
     .SetRAxis(new AxisSplitParameter(
-            new[] { 0d, 0.1d, 0.101d, 10d },
+            new[] { 1d, 1.1d, 1.101d, 25d },
             new UniformSplitter(1),
             new UniformSplitter(1),
             new UniformSplitter(1)
         )
     )
     .SetZAxis(new AxisSplitParameter(
-            new[] { 0d, 6d, 12d },
-            new ProportionalSplitter(10, 0.9d),
-            new ProportionalSplitter(10, 1.1d)
+            new[] { 1d, 7d, 13d },
+            new ProportionalSplitter(10, 0.56),
+            new ProportionalSplitter(10, 1.44)
         )
     )
     .Build();
@@ -44,15 +44,18 @@ var omega = 100000d;
 
 var localBasisFunctionsProvider = new LocalBasisFunctionsProvider(grid, new LinearFunctionsProvider());
 
-Func<Node2D, Complex> u = p => new Complex(p.R * (p.R - 10) * p.Z * (p.Z - 12), -p.R * (p.R - 10) * p.Z * (p.Z - 12));
+Func<Node2D, Complex> u = p => new Complex((p.R - 1d) * (p.R - 25d) * (p.Z - 1d) * (p.Z - 13d), -(p.R - 1d) * (p.R - 25d) * (p.Z - 1d) * (p.Z - 13d));
 
-var f = new RightPartParameter(
-        (p, mu, sigma) => new Complex(
-            (-(p.Z * (p.Z - 12) * (4 * p.R - 10) / p.R) + u(p).Real / (p.R * p.R) -
-            2 * p.R * (p.R - 10)) / mu - omega * sigma * u(p).Imaginary,
-            (p.Z * (p.Z - 12) * (4 * p.R - 10) / p.R + u(p).Imaginary / (p.R * p.R) +
-             2 * p.R * (p.R - 10)) / mu + omega * sigma * u(p).Real
-            ), grid);
+var f = new RightPartParameter
+(
+    (p, mu, sigma) => new Complex(
+        (-((p.Z - 13d) * (p.Z - 1d) * (4d * p.R - 26d) / p.R) + u(p).Real / (p.R * p.R) -
+         2d * (p.R - 25d) * (p.R - 1d)) / mu - omega * sigma * u(p).Imaginary,
+        ((p.Z - 13d) * (p.Z - 1d) * (4d * p.R - 26d) / p.R + u(p).Imaginary / (p.R * p.R) +
+         2d * (p.R - 25d) * (p.R - 1d)) / mu + omega * sigma * u(p).Real
+    ),
+    grid
+);
 
 var derivativeCalculator = new DerivativeCalculator();
 
@@ -62,7 +65,7 @@ var localAssembler = new LocalAssembler(grid, localBasisFunctionsProvider, mater
 var inserter = new Inserter();
 var globalAssembler = new GlobalAssembler<Node2D>(new MatrixPortraitBuilder(), localAssembler, inserter, new GaussExcluder());
 
-var firstBoundaryProvider = new FirstBoundaryProvider(grid);
+var firstBoundaryProvider = new FirstBoundaryProvider(grid, u);
 var conditions = firstBoundaryProvider.GetConditions(3, 20);
 
 var equation = globalAssembler
@@ -76,6 +79,8 @@ var los = new LOS(luPreconditioner, new LUSparse(luPreconditioner));
 var solution = los.Solve(equation);
 
 var femSolution = new FEMSolution(grid, solution, localBasisFunctionsProvider, omega);
+
 var error = femSolution.CalcError(u);
+var fieldValues = femSolution.Calculate(1d, 1.05d);
 
 Console.WriteLine(error);

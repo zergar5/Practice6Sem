@@ -4,6 +4,7 @@ using Practice6Sem.Core.GridComponents;
 using Practice6Sem.FEM;
 using Practice6Sem.TwoDimensional.Assembling.Local;
 using System.Numerics;
+using Practice6Sem.GridGenerator.Area.Core;
 
 namespace Practice6Sem.TwoDimensional;
 
@@ -84,10 +85,18 @@ public class FEMSolution
         return double.NaN;
     }
 
-    public double Calculate(Node2D point, double time, double r)
+    public double[] Calculate(double time, double r)
     {
-        if (AreaHas(point))
+        var zInterval = new Interval(_grid.Nodes[0].Z, _grid.Nodes[^1].Z);
+        var numberOfSegments = (int)(zInterval.Length / 0.01d);
+        var fieldValues = new double[numberOfSegments + 1];
+
+        var point = new Node2D(r, zInterval.Begin - 0.01d);
+
+        for (var i = 0; i <= numberOfSegments; i++)
         {
+            point = point with { Z = point.Z + 0.01d };
+
             var element = _grid.Elements.First(x => ElementHas(x, point));
 
             var basisFunctions = _localBasisFunctionsProvider.GetBilinearFunctions(element);
@@ -95,53 +104,51 @@ public class FEMSolution
             var sumS = 0d;
             var sumC = 0d;
 
-            for (var i = 0; i < element.NodesIndexes.Length; i++)
+            for (var j = 0; j < element.NodesIndexes.Length; j++)
             {
-                sumS += _solution[element.NodesIndexes[i] * 2] * basisFunctions[i].Calculate(point);
-                sumC += _solution[element.NodesIndexes[i] * 2 + 1] * basisFunctions[i].Calculate(point);
+                sumS += _solution[element.NodesIndexes[j] * 2] * basisFunctions[j].Calculate(point);
+                sumC += _solution[element.NodesIndexes[j] * 2 + 1] * basisFunctions[j].Calculate(point);
             }
 
             var result = (sumS * Math.Sin(_omega * time) + sumC * Math.Cos(_omega * time)) * 2 * Math.PI * r;
 
             CourseHolder.WriteSolution(point, time, result);
 
-            return result;
+            fieldValues[i] = result;
         }
 
-        CourseHolder.WriteAreaInfo();
-        CourseHolder.WriteSolution(point, double.NaN, double.NaN);
-        return double.NaN;
+        return fieldValues;
     }
 
     public double CalcError(Func<Node2D, Complex> u)
+{
+    var trueSolution = new GlobalVector(_solution.Count);
+
+    for (var i = 0; i < trueSolution.Count / 2; i++)
     {
-        var trueSolution = new GlobalVector(_solution.Count);
-
-        for (var i = 0; i < trueSolution.Count / 2; i++)
-        {
-            var uValues = u(_grid.Nodes[i]);
-            trueSolution[i * 2] = uValues.Real;
-            trueSolution[i * 2 + 1] = uValues.Imaginary;
-        }
-
-        GlobalVector.Subtract(_solution, trueSolution, trueSolution);
-
-        return trueSolution.Norm;
+        var uValues = u(_grid.Nodes[i]);
+        trueSolution[i * 2] = uValues.Real;
+        trueSolution[i * 2 + 1] = uValues.Imaginary;
     }
 
-    private bool ElementHas(Element element, Node2D node)
-    {
-        var leftCornerNode = _grid.Nodes[element.NodesIndexes[0]];
-        var rightCornerNode = _grid.Nodes[element.NodesIndexes[^1]];
-        return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
-               node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
-    }
+    GlobalVector.Subtract(_solution, trueSolution, trueSolution);
 
-    private bool AreaHas(Node2D node)
-    {
-        var leftCornerNode = _grid.Nodes[0];
-        var rightCornerNode = _grid.Nodes[^1];
-        return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
-               node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
-    }
+    return trueSolution.Norm;
+}
+
+private bool ElementHas(Element element, Node2D node)
+{
+    var leftCornerNode = _grid.Nodes[element.NodesIndexes[0]];
+    var rightCornerNode = _grid.Nodes[element.NodesIndexes[^1]];
+    return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
+           node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
+}
+
+private bool AreaHas(Node2D node)
+{
+    var leftCornerNode = _grid.Nodes[0];
+    var rightCornerNode = _grid.Nodes[^1];
+    return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
+           node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
+}
 }
