@@ -80,21 +80,13 @@ public class SparseMatrix
         return new SparseMatrix(rowIndexes, columnIndexes, diagonal, lowerValues, upperValues);
     }
 
-    public int[] CloneRows()
+    public SparseMatrix Clone(SparseMatrix sparseMatrix)
     {
-        var rowIndexes = new int[RowsIndexes.Length];
+        Array.Copy(Diagonal, sparseMatrix.Diagonal, Diagonal.Length);
+        Array.Copy(LowerValues, sparseMatrix.LowerValues, LowerValues.Length);
+        Array.Copy(UpperValues, sparseMatrix.UpperValues, UpperValues.Length);
 
-        Array.Copy(RowsIndexes, rowIndexes, RowsIndexes.Length);
-
-        return rowIndexes;
+        return sparseMatrix;
     }
 
-    public double[] CloneDiagonal()
-    {
-        var diagonal = new double[Diagonal.Length];
-
-        Array.Copy(Diagonal, diagonal, Diagonal.Length);
-
-        return diagonal;
-    }
 }

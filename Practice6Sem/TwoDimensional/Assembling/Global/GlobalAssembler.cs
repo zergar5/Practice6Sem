@@ -46,7 +46,6 @@ public class GlobalAssembler<TNode>
             var localVector = _localAssembler.AssembleRightSide(element);
 
             _inserter.InsertMatrix(_equation.Matrix, localMatrix);
-            _inserter.InsertMatrix(_preconditionMatrix, localMatrix);
             _inserter.InsertVector(_equation.RightSide, localVector);
         }
 
@@ -70,6 +69,7 @@ public class GlobalAssembler<TNode>
 
     public SparseMatrix BuildPreconditionMatrix()
     {
+        _preconditionMatrix = _equation.Matrix.Clone(_preconditionMatrix);
         return _preconditionMatrix;
     }
 }
