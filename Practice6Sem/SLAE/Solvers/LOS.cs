@@ -6,7 +6,7 @@ using Practice6Sem.SLAE.Preconditions;
 
 namespace Practice6Sem.SLAE.Solvers;
 
-public class LOS : ISolver<SparseMatrix>
+public class LOS
 {
     private readonly LUPreconditioner _luPreconditioner;
     private readonly LUSparse _luSparse;
@@ -23,15 +23,16 @@ public class LOS : ISolver<SparseMatrix>
 
     private void PrepareProcess(Equation<SparseMatrix> equation)
     {
-        _preconditionMatrix = _luPreconditioner.Decompose(equation.Matrix);
+        _preconditionMatrix = _luPreconditioner.Decompose(_preconditionMatrix);
         var bufferVector = SparseMatrix.Multiply(equation.Matrix, equation.Solution);
         _r = _luSparse.CalcY(_preconditionMatrix, GlobalVector.Subtract(equation.RightSide, bufferVector, bufferVector));
         _z = _luSparse.CalcX(_preconditionMatrix, _r);
         _p = _luSparse.CalcY(_preconditionMatrix, SparseMatrix.Multiply(equation.Matrix, _z));
     }
 
-    public GlobalVector Solve(Equation<SparseMatrix> equation)
+    public GlobalVector Solve(Equation<SparseMatrix> equation, SparseMatrix preconditionMatrix)
     {
+        _preconditionMatrix = preconditionMatrix;
         PrepareProcess(equation);
         IterationProcess(equation);
         return equation.Solution;

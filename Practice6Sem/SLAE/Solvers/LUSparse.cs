@@ -3,7 +3,7 @@ using Practice6Sem.SLAE.Preconditions;
 
 namespace Practice6Sem.SLAE.Solvers;
 
-public class LUSparse : ISolver<SparseMatrix>
+public class LUSparse
 {
     private readonly LUPreconditioner _luPreconditioner;
 
@@ -12,18 +12,9 @@ public class LUSparse : ISolver<SparseMatrix>
         _luPreconditioner = luPreconditioner;
     }
 
-    public GlobalVector Solve(Equation<SparseMatrix> equation)
+    public GlobalVector CalcY(SparseMatrix sparseMatrix, GlobalVector b, GlobalVector? y = null)
     {
-        var matrix = _luPreconditioner.Decompose(equation.Matrix);
-        var y = CalcY(matrix, equation.RightSide);
-        var x = CalcX(matrix, y);
-
-        return x;
-    }
-
-    public GlobalVector CalcY(SparseMatrix sparseMatrix, GlobalVector b)
-    {
-        var y = b;
+        y ??= new GlobalVector(b.Count);
 
         for (var i = 0; i < sparseMatrix.CountRows; i++)
         {
@@ -38,9 +29,9 @@ public class LUSparse : ISolver<SparseMatrix>
         return y;
     }
 
-    public GlobalVector CalcX(SparseMatrix sparseMatrix, GlobalVector y)
+    public GlobalVector CalcX(SparseMatrix sparseMatrix, GlobalVector y, GlobalVector? x = null)
     {
-        var x = y.Clone();
+        x ??= y.Clone();
 
         for (var i = sparseMatrix.CountRows - 1; i >= 0; i--)
         {

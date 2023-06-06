@@ -1,4 +1,5 @@
-﻿using Practice6Sem.Core;
+﻿using System.Runtime.InteropServices;
+using Practice6Sem.Core;
 using Practice6Sem.Core.Boundary;
 using Practice6Sem.Core.Global;
 using Practice6Sem.FEM.Assembling;
@@ -13,6 +14,7 @@ public class GlobalAssembler<TNode>
     private readonly IInserter<SparseMatrix> _inserter;
     private readonly GaussExcluder _gaussExсluder;
     private Equation<SparseMatrix> _equation;
+    private SparseMatrix _preconditionMatrix;
 
     public GlobalAssembler
     (
@@ -31,6 +33,7 @@ public class GlobalAssembler<TNode>
     public GlobalAssembler<TNode> AssembleEquation(Grid<TNode> grid)
     {
         var globalMatrix = _matrixPortraitBuilder.Build(grid);
+        _preconditionMatrix = globalMatrix.Clone();
         _equation = new Equation<SparseMatrix>(
             globalMatrix,
             new GlobalVector(grid.Nodes.Length * 2),
@@ -43,6 +46,7 @@ public class GlobalAssembler<TNode>
             var localVector = _localAssembler.AssembleRightSide(element);
 
             _inserter.InsertMatrix(_equation.Matrix, localMatrix);
+            _inserter.InsertMatrix(_preconditionMatrix, localMatrix);
             _inserter.InsertVector(_equation.RightSide, localVector);
         }
 
@@ -62,5 +66,10 @@ public class GlobalAssembler<TNode>
     public Equation<SparseMatrix> BuildEquation()
     {
         return _equation;
+    }
+
+    public SparseMatrix BuildPreconditionMatrix()
+    {
+        return _preconditionMatrix;
     }
 }

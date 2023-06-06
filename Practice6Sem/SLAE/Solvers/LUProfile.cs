@@ -2,7 +2,7 @@
 
 namespace Practice6Sem.SLAE.Solvers;
 
-public class LUProfile : ISolver<ProfileMatrix>
+public class LUProfile
 {
     public GlobalVector Solve(Equation<ProfileMatrix> equation)
     {

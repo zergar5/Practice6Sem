@@ -6,7 +6,7 @@ public class LUPreconditioner : IPreconditioner<SparseMatrix>
 {
     public SparseMatrix Decompose(SparseMatrix globalMatrix)
     {
-        var preconditionMatrix = globalMatrix.Clone();
+        var preconditionMatrix = globalMatrix;
 
         for (var i = 0; i < preconditionMatrix.CountRows; i++)
         {
