@@ -85,7 +85,7 @@ public class FEMSolution
         return double.NaN;
     }
 
-    public double[] Calculate(double time, double r)
+    public double[] CalculateField(double time, double r)
     {
         var zInterval = new Interval(_grid.Nodes[0].Z, _grid.Nodes[^1].Z);
         var numberOfSegments = (int)(zInterval.Length / 0.01d);
@@ -121,34 +121,34 @@ public class FEMSolution
     }
 
     public double CalcError(Func<Node2D, Complex> u)
-{
-    var trueSolution = new GlobalVector(_solution.Count);
-
-    for (var i = 0; i < trueSolution.Count / 2; i++)
     {
-        var uValues = u(_grid.Nodes[i]);
-        trueSolution[i * 2] = uValues.Real;
-        trueSolution[i * 2 + 1] = uValues.Imaginary;
+        var trueSolution = new GlobalVector(_solution.Count);
+
+        for (var i = 0; i < trueSolution.Count / 2; i++)
+        {
+            var uValues = u(_grid.Nodes[i]);
+            trueSolution[i * 2] = uValues.Real;
+            trueSolution[i * 2 + 1] = uValues.Imaginary;
+        }
+
+        GlobalVector.Subtract(_solution, trueSolution, trueSolution);
+
+        return trueSolution.Norm;
     }
 
-    GlobalVector.Subtract(_solution, trueSolution, trueSolution);
+    private bool ElementHas(Element element, Node2D node)
+    {
+        var leftCornerNode = _grid.Nodes[element.NodesIndexes[0]];
+        var rightCornerNode = _grid.Nodes[element.NodesIndexes[^1]];
+        return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
+               node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
+    }
 
-    return trueSolution.Norm;
-}
-
-private bool ElementHas(Element element, Node2D node)
-{
-    var leftCornerNode = _grid.Nodes[element.NodesIndexes[0]];
-    var rightCornerNode = _grid.Nodes[element.NodesIndexes[^1]];
-    return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
-           node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
-}
-
-private bool AreaHas(Node2D node)
-{
-    var leftCornerNode = _grid.Nodes[0];
-    var rightCornerNode = _grid.Nodes[^1];
-    return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
-           node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
-}
+    private bool AreaHas(Node2D node)
+    {
+        var leftCornerNode = _grid.Nodes[0];
+        var rightCornerNode = _grid.Nodes[^1];
+        return node.R >= leftCornerNode.R && node.Z >= leftCornerNode.Z &&
+               node.R <= rightCornerNode.R && node.Z <= rightCornerNode.Z;
+    }
 }
